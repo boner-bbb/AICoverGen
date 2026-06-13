@@ -1,0 +1,31 @@
+name: Push Replicate model
+
+on:
+  workflow_dispatch:
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Cog
+        run: |
+          sudo curl -L \
+            -o /usr/local/bin/cog \
+            https://github.com/replicate/cog/releases/latest/download/cog_Linux_x86_64
+          sudo chmod +x /usr/local/bin/cog
+          cog --version
+
+      - name: Log in to Replicate registry
+        env:
+          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+        run: |
+          printf '%s' "$REPLICATE_API_TOKEN" | cog login --token-stdin
+
+      - name: Push model
+        run: |
+          cog push r8.im/boner-bbb/musiko-rvc-cover

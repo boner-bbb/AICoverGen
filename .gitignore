@@ -13,6 +13,7 @@ song_output/*/*.wav
 song_output/*/*.mp3
 
 # Replicate
+.cog/
 nb.ipynb
 output.mp3
 *.zip

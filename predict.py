@@ -7,7 +7,7 @@ import shutil
 import zipfile
 import urllib.request
 from argparse import Namespace
-from cog import BasePredictor, Input, Path as CogPath
+from cog import BasePredictor, Input, Path
 
 sys.path.insert(0, os.path.abspath("src"))
 
@@ -52,27 +52,13 @@ class Predictor(BasePredictor):
 
     def predict(
         self,
-        song_input: CogPath = Input(
+        song_input: Path = Input(
             description="Upload your audio file here.",
             default=None,
         ),
         rvc_model: str = Input(
             description="RVC model for a specific voice. If using a custom model, this should match the name of the downloaded model. If a 'custom_rvc_model_download_url' is provided, this will be automatically set to the name of the downloaded model.",
             default="Squidward",
-            choices=[
-                "Squidward",
-                "MrKrabs",
-                "Plankton",
-                "Drake",
-                "Vader",
-                "Trump",
-                "Biden",
-                "Obama",
-                "Guitar",
-                "Voilin",
-                "CUSTOM",
-                "SamA",  # TODO REMOVE THIS
-            ],
         ),
         custom_rvc_model_download_url: str = Input(
             description="URL to download a custom RVC model. If provided, the model will be downloaded (if it doesn't already exist) and used for prediction, regardless of the 'rvc_model' value.",
@@ -161,12 +147,12 @@ class Predictor(BasePredictor):
             default="mp3",
             choices=["mp3", "wav"],
         ),
-    ) -> CogPath:
+    ) -> Path:
         """
         Runs a single prediction on the model.
 
         Required Parameters:
-            song_input (CogPath): Upload your audio file here.
+            song_input (Path): Upload your audio file here.
             rvc_model (str): RVC model for a specific voice. Default is "Squidward". If a 'custom_rvc_model_download_url' is provided, this will be automatically set to the name of the downloaded model.
             pitch_change (float): Change pitch of AI vocals in octaves. Set to 0 for no change. Generally, use 1 for male to female conversions and -1 for vice-versa.
 
@@ -189,7 +175,7 @@ class Predictor(BasePredictor):
             output_format (str): wav for best quality and large file size, mp3 for decent quality and small file size. Defaults to "mp3".
 
         Returns:
-            CogPath: The output path of the generated audio file.
+            Path: The output path of the generated audio file.
         """
 
         if custom_rvc_model_download_url:
@@ -273,4 +259,4 @@ class Predictor(BasePredictor):
         print(f"[+] Cover generated at {cover_path}")
 
         # Return the output path
-        return CogPath(cover_path)
+        return Path(cover_path)
