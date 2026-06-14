@@ -4,6 +4,7 @@
 import os
 import sys
 import shutil
+import subprocess
 import zipfile
 import urllib.request
 from argparse import Namespace
@@ -11,13 +12,50 @@ from cog import BasePredictor, Input, Path
 
 sys.path.insert(0, os.path.abspath("src"))
 
-import main as m
+print("[startup] predict.py imported", flush=True)
+
+m = None
+
+
+def load_pipeline():
+    global m
+    if m is None:
+        print("[startup] importing AICoverGen pipeline...", flush=True)
+        import main as main_module
+
+        m = main_module
+        print("[startup] AICoverGen pipeline imported", flush=True)
+    return m
+
+
+def ensure_required_models():
+    pipeline = load_pipeline()
+    required_files = [
+        os.path.join(pipeline.mdxnet_models_dir, "UVR-MDX-NET-Voc_FT.onnx"),
+        os.path.join(pipeline.mdxnet_models_dir, "UVR_MDXNET_KARA_2.onnx"),
+        os.path.join(pipeline.mdxnet_models_dir, "Reverb_HQ_By_FoxJoy.onnx"),
+        os.path.join(pipeline.rvc_models_dir, "hubert_base.pt"),
+        os.path.join(pipeline.rvc_models_dir, "rmvpe.pt"),
+    ]
+    missing_files = [path for path in required_files if not os.path.exists(path)]
+    if not missing_files:
+        print("[setup] required base models already exist", flush=True)
+        return
+
+    print("[setup] missing required base models:", flush=True)
+    for path in missing_files:
+        print(f"[setup] - {path}", flush=True)
+
+    print("[setup] downloading required base models...", flush=True)
+    subprocess.run([sys.executable, "src/download_models.py"], check=True)
+    print("[setup] required base models downloaded", flush=True)
 
 
 def download_online_model(url, dir_name):
+    pipeline = load_pipeline()
     print(f"[~] Downloading voice model with name {dir_name}...")
     zip_name = url.split("/")[-1]
-    extraction_folder = os.path.join(m.rvc_models_dir, dir_name)
+    extraction_folder = os.path.join(pipeline.rvc_models_dir, dir_name)
     if os.path.exists(extraction_folder):
         print(f"Voice model directory {dir_name} already exists! Skipping download.")
         return
@@ -52,6 +90,10 @@ class Predictor(BasePredictor):
 
     def predict(
         self,
+        debug_startup_only: bool = Input(
+            description="Return a tiny text file without running the cover pipeline. Use this to verify the deployment starts.",
+            default=False,
+        ),
         song_input: Path = Input(
             description="Upload your audio file here.",
             default=None,
@@ -177,6 +219,17 @@ class Predictor(BasePredictor):
         Returns:
             Path: The output path of the generated audio file.
         """
+        print("[predict] prediction received", flush=True)
+
+        if debug_startup_only:
+            debug_path = "/tmp/replicate-startup-ok.txt"
+            with open(debug_path, "w") as f:
+                f.write("replicate startup ok\n")
+            print("[predict] debug_startup_only succeeded", flush=True)
+            return Path(debug_path)
+
+        pipeline = load_pipeline()
+        ensure_required_models()
 
         if custom_rvc_model_download_url:
             custom_rvc_model_download_name = urllib.parse.unquote(
@@ -230,12 +283,12 @@ class Predictor(BasePredictor):
         )
 
         rvc_dirname = args.rvc_dirname
-        if not os.path.exists(os.path.join(m.rvc_models_dir, rvc_dirname)):
+        if not os.path.exists(os.path.join(pipeline.rvc_models_dir, rvc_dirname)):
             raise Exception(
-                f"The folder {os.path.join(m.rvc_models_dir, rvc_dirname)} does not exist."
+                f"The folder {os.path.join(pipeline.rvc_models_dir, rvc_dirname)} does not exist."
             )
 
-        cover_path = m.song_cover_pipeline(
+        cover_path = pipeline.song_cover_pipeline(
             args.song_input,
             rvc_dirname,
             args.pitch_change,
