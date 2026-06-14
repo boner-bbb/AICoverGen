@@ -21,6 +21,7 @@ build:
     - "faiss-cpu==1.7.3"
     - "ffmpeg-python>=0.2.0"
     - "gradio==3.39.0"
+    - "gradio_client==0.3.0"
     - "lib==4.0.0"
     - "librosa==0.9.1"
     - "numpy==1.23.5"
@@ -38,7 +39,6 @@ build:
     - "tqdm==4.65.0"
     - "yt_dlp==2023.7.6"
     - "sox==1.4.1"
-    - "gradio"
 
   # commands run after the environment is setup
   run:
