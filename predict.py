@@ -94,6 +94,10 @@ class Predictor(BasePredictor):
             description="Return a tiny text file without running the cover pipeline. Use this to verify the deployment starts.",
             default=False,
         ),
+        debug_import_pipeline_only: bool = Input(
+            description="Import the AICoverGen pipeline and return a tiny text file without running cover generation.",
+            default=False,
+        ),
         song_input: Path = Input(
             description="Upload your audio file here.",
             default=None,
@@ -226,6 +230,14 @@ class Predictor(BasePredictor):
             with open(debug_path, "w") as f:
                 f.write("replicate startup ok\n")
             print("[predict] debug_startup_only succeeded", flush=True)
+            return Path(debug_path)
+
+        if debug_import_pipeline_only:
+            load_pipeline()
+            debug_path = "/tmp/replicate-import-ok.txt"
+            with open(debug_path, "w") as f:
+                f.write("replicate import ok\n")
+            print("[predict] debug_import_pipeline_only succeeded", flush=True)
             return Path(debug_path)
 
         pipeline = load_pipeline()
